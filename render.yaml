@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: super-osint-agent
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    plan: free
+    region: oregon
+    envVars:
+      - key: PYTHONPATH
+        value: ./backend
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DEFAULT_LLM_PROVIDER
+        value: gemini
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: E2B_API_KEY
+        sync: false

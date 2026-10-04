@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super OSINT AI Agent — Cyber Intelligence Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Vis-Network for interactive intelligence relationship graph -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+  <div class="cyber-grid-background"></div>
+  <div class="radial-glow"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-radar">
+        <div class="radar-sweep"></div>
+        <span class="radar-dot"></span>
+      </div>
+      <div>
+        <h1 class="brand-title">SUPER OSINT <span>AGENT</span></h1>
+        <p class="brand-subtitle">Autonomous Multi-LLM Reconnaissance & Intelligence Engine</p>
+      </div>
+    </div>
+
+    <div class="system-pills">
+      <div class="pill status-pill" id="system-status-pill">
+        <span class="pulse-indicator"></span>
+        <span id="system-status-text">INITIALIZING...</span>
+      </div>
+      <div class="pill provider-pill" id="active-provider-pill" title="Current Multi-LLM Gateway">
+        <span class="icon">⚡</span>
+        <span id="active-provider-text">LLM: Auto-Gateway</span>
+      </div>
+      <div class="pill storage-pill" id="storage-pill" title="Storage Configuration">
+        <span class="icon">💾</span>
+        <span id="storage-text">Supabase Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-layout">
+    <!-- Left: Target Configuration & Controls -->
+    <section class="control-panel glass-card">
+      <div class="card-header">
+        <span class="section-tag">TARGET SPECIFICATION</span>
+        <h2>Recon Target</h2>
+      </div>
+
+      <form id="investigation-form">
+        <div class="form-group">
+          <label for="target-input">Target Domain, Username, or URL</label>
+          <div class="input-wrapper">
+            <span class="input-prefix">TARGET://</span>
+            <input type="text" id="target-input" placeholder="e.g. github.com or username" required autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="investigation-type">Investigation Objective</label>
+          <select id="investigation-type" class="cyber-select">
+            <option value="domain">Full Domain & Infrastructure Recon</option>
+            <option value="username">Identity & Social Footprint Scan</option>
+            <option value="dorks">Automated Google Dorks Audit</option>
+            <option value="quick">Fast Surface Triage (DNS + Headers)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="llm-provider-select">AI Provider</label>
+            <select id="llm-provider-select" class="cyber-select">
+              <option value="">Auto (Best Available)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="groq">Groq (Llama 3.3)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="openai">OpenAI GPT-4o</option>
+              <option value="anthropic">Claude 3.5 Sonnet</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="max-steps-input">Max Steps: <span id="steps-val">5</span></label>
+            <input type="range" id="max-steps-input" min="2" max="10" value="5" class="cyber-slider">
+          </div>
+        </div>
+
+        <button type="submit" id="start-btn" class="cyber-btn primary-btn">
+          <span class="btn-glow"></span>
+          <span class="btn-text">INITIATE AGENT RECON</span>
+          <span class="btn-icon">⚡</span>
+        </button>
+
+        <button type="button" id="stop-btn" class="cyber-btn danger-btn hidden">
+          <span class="btn-text">ABORT OPERATION</span>
+        </button>
+      </form>
+
+      <!-- Quick Skill Actions -->
+      <div class="quick-tools-section">
+        <span class="section-tag">RAPID OSINT TOOLS</span>
+        <div class="quick-grid">
+          <button class="tool-chip" onclick="quickRun('subdomains')">🌐 Subdomains (crt.sh)</button>
+          <button class="tool-chip" onclick="quickRun('dns')">📡 DNS-over-HTTPS</button>
+          <button class="tool-chip" onclick="quickRun('headers')">🛡️ Security Headers</button>
+          <button class="tool-chip" onclick="quickRun('archive')">⏳ Wayback CDX</button>
+          <button class="tool-chip" onclick="quickRun('username')">👤 Username Check</button>
+          <button class="tool-chip" onclick="quickRun('browse')">🔍 Stealth Browser</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Workspaces & Visualizer -->
+    <section class="workspace-panel">
+      <!-- Navigation Tabs -->
+      <nav class="cyber-tabs">
+        <button class="tab-btn active" data-tab="tab-stream">
+          <span class="tab-icon">⚡</span> Live Agent Terminal
+        </button>
+        <button class="tab-btn" data-tab="tab-dorks">
+          <span class="tab-icon">🎯</span> Google Dork Studio
+        </button>
+        <button class="tab-btn" data-tab="tab-graph">
+          <span class="tab-icon">🕸️</span> Intelligence Graph
+        </button>
+        <button class="tab-btn" data-tab="tab-browser">
+          <span class="tab-icon">🖥️</span> Stealth Browser & Visuals
+        </button>
+        <button class="tab-btn" data-tab="tab-mcp">
+          <span class="tab-icon">🔌</span> MCP & Deployment
+        </button>
+      </nav>
+
+      <!-- Tab 1: Live Agent Terminal -->
+      <div id="tab-stream" class="tab-content active glass-card">
+        <div class="stream-toolbar">
+          <div class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="terminal-title">AGENT_REASONING_CONSOLE // SSE_STREAM_ACTIVE</span>
+          </div>
+          <div class="toolbar-actions">
+            <button class="action-btn" id="clear-stream-btn" title="Clear Terminal">Clear</button>
+            <button class="action-btn" id="export-dossier-btn" title="Export Markdown Report">Export Dossier</button>
+          </div>
+        </div>
+
+        <div id="stream-output" class="terminal-body">
+          <div class="terminal-welcome">
+            <div class="glitch-text" data-text="OSINT_AGENT_STANDBY">OSINT_AGENT_STANDBY</div>
+            <p>System operational. Enter a target domain, username, or keyword and click <strong>INITIATE AGENT RECON</strong> to begin autonomous data gathering.</p>
+            <div class="sys-caps">
+              <span>✓ Multi-LLM Router (Gemini/Groq/OpenRouter/OpenAI/Claude)</span>
+              <span>✓ Google Dorks Engine (Exposed files, DBs, Subdomains)</span>
+              <span>✓ Passive CT Logs & DNS-over-HTTPS</span>
+              <span>✓ Sandbox Execution & Supabase Sync</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Google Dork Studio -->
+      <div id="tab-dorks" class="tab-content glass-card">
+        <div class="card-header">
+          <div>
+            <span class="section-tag">GOOGLE DORK ENGINE</span>
+            <h2>Dork Generator & Live Search</h2>
+          </div>
+          <div class="dork-actions">
+            <select id="dork-category-select" class="cyber-select small">
+              <option value="">All Categories</option>
+              <option value="sensitive_files">Sensitive Files (.env, .sql, .conf)</option>
+              <option value="exposed_directories">Open Directory Listings ("index of /")</option>
+              <option value="admin_portals">Admin & Login Portals</option>
+              <option value="cloud_buckets_storage">Cloud Storage Buckets (S3, Azure, GCP)</option>
+              <option value="subdomain_recon">Subdomain Footprint</option>
+              <option value="confidential_documents">Confidential Documents</option>
+              <option value="debug_errors">Debug Logs & Stack Traces</option>
+            </select>
+            <button id="generate-dorks-btn" class="cyber-btn small">GENERATE DORKS</button>
+          </div>
+        </div>
+
+        <div id="dorks-container" class="dorks-grid">
+          <div class="empty-state">Generate dorks for your target domain to reveal exposed configs, portals, and cloud assets.</div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Intelligence Graph -->
+      <div id="tab-graph" class="tab-content glass-card">
+        <div class="card-header">
+          <div>
+            <span class="section-tag">RELATIONSHIP MAPPING</span>
+            <h2>Discovered Intelligence Graph</h2>
+          </div>
+          <span class="graph-legend">
+            <span class="badge target">Target</span>
+            <span class="badge subdomain">Subdomain</span>
+            <span class="badge ip">IP Address</span>
+            <span class="badge social">Social Profile</span>
+          </span>
+        </div>
+        <div id="network-graph-container" class="graph-canvas"></div>
+      </div>
+
+      <!-- Tab 4: Stealth Browser & Visuals -->
+      <div id="tab-browser" class="tab-content glass-card">
+        <div class="card-header">
+          <div>
+            <span class="section-tag">HEADLESS RECONNAISSANCE</span>
+            <h2>Stealth Browser & Snapshot Preview</h2>
+          </div>
+        </div>
+
+        <div class="browser-sandbox-controls">
+          <input type="text" id="browser-url-input" placeholder="https://target-domain.com" class="cyber-input">
+          <button id="browser-go-btn" class="cyber-btn small">BROWSE & SNAPSHOT</button>
+        </div>
+
+        <div class="browser-split-view">
+          <div class="browser-preview-pane">
+            <h3>Visual Snapshot</h3>
+            <div id="screenshot-viewer" class="snapshot-box">
+              <p class="placeholder-text">Enter URL to capture page snapshot.</p>
+            </div>
+          </div>
+          <div class="browser-data-pane">
+            <h3>Extracted Metadata & Links</h3>
+            <div id="browser-extracted-text" class="extracted-text-box">
+              <p class="placeholder-text">Extracted DOM text and outbound links will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: MCP & Deployment -->
+      <div id="tab-mcp" class="tab-content glass-card">
+        <div class="card-header">
+          <div>
+            <span class="section-tag">EXTENSIBILITY & DEPLOYMENT</span>
+            <h2>Model Context Protocol (MCP) & Render Guide</h2>
+          </div>
+        </div>
+
+        <div class="mcp-guide-grid">
+          <div class="guide-box">
+            <h3>🔌 Connect Claude Desktop or Cursor to this MCP Server</h3>
+            <p>Your hosted instance exposes standard MCP endpoints over SSE. Add this to your Claude Desktop <code>claude_desktop_config.json</code> or Cursor:</p>
+            <pre class="code-block"><code>{
+  "mcpServers": {
+    "super-osint": {
+      "url": "https://your-agent-name.onrender.com/mcp/sse"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="guide-box">
+            <h3>🚀 Free Deployment on Render (512MB RAM)</h3>
+            <p>This backend is optimized to use less than 120MB RAM so it runs smoothly on Render's free tier without crashing.</p>
+            <ul>
+              <li>1. Push this repository to your GitHub.</li>
+              <li>2. On <a href="https://render.com" target="_blank" class="glow-link">Render.com</a>, click <strong>New &gt; Web Service</strong>.</li>
+              <li>3. Connect your repo and set Environment to <strong>Python</strong> or <strong>Docker</strong>.</li>
+              <li>4. Add your free <code>GEMINI_API_KEY</code> or <code>GROQ_API_KEY</code> in Environment Variables.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -3,22 +3,28 @@ import re
 from typing import Dict, Any, List
 import httpx
 
-# List of major public social & developer services for OSINT username footprinting
+# List of major public social, professional & developer platforms for OSINT username footprinting
 PLATFORMS = {
-    "GitHub": {"url": "https://github.com/{}", "check": 200},
-    "Reddit": {"url": "https://www.reddit.com/user/{}", "check": 200},
-    "Twitter/X": {"url": "https://x.com/{}", "check": 200},
-    "GitLab": {"url": "https://gitlab.com/{}", "check": 200},
-    "Telegram": {"url": "https://t.me/{}", "check": 200},
-    "Medium": {"url": "https://medium.com/@{}", "check": 200},
-    "HackerNews": {"url": "https://news.ycombinator.com/user?id={}", "check": 200},
-    "Keybase": {"url": "https://keybase.io/{}", "check": 200},
-    "Dev.to": {"url": "https://dev.to/{}", "check": 200},
-    "Pinterest": {"url": "https://www.pinterest.com/{}/", "check": 200},
-    "DockerHub": {"url": "https://hub.docker.com/u/{}", "check": 200},
-    "Pastebin": {"url": "https://pastebin.com/u/{}", "check": 200},
-    "Substack": {"url": "https://{}.substack.com", "check": 200},
-    "Gravatar": {"url": "https://en.gravatar.com/{}", "check": 200}
+    "GitHub": {"url": "https://github.com/{}", "check": 200, "not_found": "404"},
+    "Instagram": {"url": "https://www.instagram.com/{}/", "check": 200, "not_found": "Page Not Found"},
+    "Facebook": {"url": "https://www.facebook.com/{}/", "check": 200, "not_found": "isn't available"},
+    "LinkedIn": {"url": "https://www.linkedin.com/in/{}/", "check": 200, "not_found": "Page not found"},
+    "Twitter/X": {"url": "https://x.com/{}", "check": 200, "not_found": "This account doesn't exist"},
+    "Reddit": {"url": "https://www.reddit.com/user/{}", "check": 200, "not_found": "nobody on Reddit goes by that name"},
+    "YouTube": {"url": "https://www.youtube.com/@{}", "check": 200, "not_found": "404 Not Found"},
+    "TikTok": {"url": "https://www.tiktok.com/@{}", "check": 200, "not_found": "Couldn't find this account"},
+    "Twitch": {"url": "https://www.twitch.tv/{}", "check": 200, "not_found": "content is unavailable"},
+    "Telegram": {"url": "https://t.me/{}", "check": 200, "not_found": "tgme_page_extra"},
+    "GitLab": {"url": "https://gitlab.com/{}", "check": 200, "not_found": "404"},
+    "Medium": {"url": "https://medium.com/@{}", "check": 200, "not_found": "404"},
+    "HackerNews": {"url": "https://news.ycombinator.com/user?id={}", "check": 200, "not_found": "No such user"},
+    "Keybase": {"url": "https://keybase.io/{}", "check": 200, "not_found": "404"},
+    "Dev.to": {"url": "https://dev.to/{}", "check": 200, "not_found": "404"},
+    "Pinterest": {"url": "https://www.pinterest.com/{}/", "check": 200, "not_found": "404"},
+    "DockerHub": {"url": "https://hub.docker.com/u/{}", "check": 200, "not_found": "404"},
+    "Pastebin": {"url": "https://pastebin.com/u/{}", "check": 200, "not_found": "Not Found"},
+    "Substack": {"url": "https://{}.substack.com", "check": 200, "not_found": "404"},
+    "Gravatar": {"url": "https://en.gravatar.com/{}", "check": 200, "not_found": "404"}
 }
 
 class IdentityIntelEngine:
@@ -40,24 +46,34 @@ class IdentityIntelEngine:
         async def _probe(name: str, config: dict, client: httpx.AsyncClient):
             target_url = config["url"].format(clean_user)
             try:
-                resp = await client.get(target_url, timeout=7.0)
-                if resp.status_code == config["check"]:
-                    # Specific platform false-positive verification
-                    if name == "Reddit" and "nobody on Reddit goes by that name" in resp.text:
-                        return None
-                    if name == "Telegram" and "If you have <strong>Telegram</strong>, you can contact" not in resp.text:
-                        pass
+                resp = await client.get(target_url, timeout=8.0)
+                not_found_cue = config.get("not_found", "")
+                
+                # Check for false positives or explicit not found text
+                if not_found_cue and not_found_cue.lower() in resp.text.lower():
+                    return None
+                
+                # Check status code
+                if resp.status_code == 200:
                     return {
                         "platform": name,
                         "url": target_url,
                         "status": "Found",
                         "status_code": resp.status_code
                     }
+                # Some platforms like Instagram / Facebook redirect anonymous traffic with 301/302 when user exists
+                elif resp.status_code in (301, 302, 307) and name in ("Instagram", "Facebook", "LinkedIn"):
+                    return {
+                        "platform": name,
+                        "url": target_url,
+                        "status": "Likely Active (Login Required)",
+                        "status_code": resp.status_code
+                    }
             except Exception:
                 pass
             return None
 
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=False) as client:
             tasks = [_probe(name, conf, client) for name, conf in PLATFORMS.items()]
             probe_results = await asyncio.gather(*tasks)
 

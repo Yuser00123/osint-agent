@@ -43,6 +43,15 @@ DORK_CATALOG = {
         'site:{target} "fatal error" | "uncaught exception" | "stack trace" | "mysql error"',
         'site:{target} "Warning:" | "Notice:" filetype:php',
         'site:{target} inurl:debug | inurl:trace | inurl:status',
+    ],
+    "social_media_profiles": [
+        'site:instagram.com "{target}"',
+        'site:facebook.com "{target}"',
+        'site:linkedin.com/in/ "{target}" | site:linkedin.com/company/ "{target}"',
+        'site:x.com "{target}" | site:twitter.com "{target}"',
+        'site:tiktok.com/@{target}',
+        'site:youtube.com/@{target}',
+        'site:reddit.com/user/{target}',
     ]
 }
 
